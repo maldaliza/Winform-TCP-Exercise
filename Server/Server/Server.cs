@@ -23,6 +23,8 @@ namespace Server
         NetworkStream stream;
         StreamWriter writer;
 
+        bool connected = false;
+
         public Server()
         {
             InitializeComponent();
@@ -36,6 +38,8 @@ namespace Server
 
         private void Listen()
         {
+            connected = false;
+
             while (true)
             {
                 if (listener != null) listener.Stop();
@@ -71,7 +75,11 @@ namespace Server
                 stream = client.GetStream();
                 writer = new StreamWriter(stream);
 
-                break;
+                if (client.Connected)
+                {
+                    connected = true;
+                    break;
+                }
             }
 
             /*
@@ -84,7 +92,7 @@ namespace Server
         {
             try
             {
-                while (true)
+                while (connected)
                 {
                     byte[] buffer = new byte[1024];
                     int bytes = stream.Read(buffer, 0, buffer.Length);
@@ -115,8 +123,11 @@ namespace Server
             string message = sendTextBox.Text;
             messageTextBox.AppendText("[" + GetDateTime() + "][Send] " + message + Environment.NewLine);
 
-            writer.Write(message);
-            writer.Flush();
+            if (connected != false)
+            {
+                writer.Write(message);
+                writer.Flush();
+            }
 
             sendTextBox.Clear();
         }
@@ -129,6 +140,7 @@ namespace Server
 
         private void Server_FormClosing(object sender, FormClosingEventArgs e)
         {
+            connected = false;
             if (writer != null) writer.Close();
             if (listener != null) listener.Stop();
             if (client != null) client.Close();

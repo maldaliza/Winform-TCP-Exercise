@@ -25,6 +25,8 @@ namespace Client
         string server;
         int port;
 
+        bool connected = false;
+
         public Client()
         {
             InitializeComponent();
@@ -42,6 +44,8 @@ namespace Client
 
         private void Connect()
         {
+            connected = false;
+
             while (true)
             {
                 try
@@ -65,7 +69,11 @@ namespace Client
                     stream = client.GetStream();
                     writer = new StreamWriter(stream);
 
-                    break;
+                    if (client.Connected)
+                    {
+                        connected = true;
+                        break;
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -83,7 +91,7 @@ namespace Client
         {
             try
             {
-                while (true)
+                while (connected)
                 {
                     byte[] buffer = new byte[1024];
                     int bytes = stream.Read(buffer, 0, buffer.Length);
@@ -114,8 +122,11 @@ namespace Client
             string message = sendTextBox.Text;
             messageTextBox.AppendText("[" + GetDateTime() + "][Send] " + message + Environment.NewLine);
 
-            writer.Write(message);
-            writer.Flush();
+            if (connected != false)
+            {
+                writer.Write(message);
+                writer.Flush();
+            }
 
             sendTextBox.Clear();
         }
@@ -128,6 +139,7 @@ namespace Client
 
         private void Client_FormClosing(object sender, FormClosingEventArgs e)
         {
+            connected = false;
             if (writer != null) writer.Close();
             if (client != null) client.Close();
 
